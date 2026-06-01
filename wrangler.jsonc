@@ -1,0 +1,21 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "axiom-canon-mcp",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-06-01",
+	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+	"observability": { "enabled": true },
+	"upload_source_maps": true,
+
+	// ── CONFIG: the canon SOURCE (swap to the ratified canon's real home later = config-only, no rebuild) ──
+	// PROOF source = a clearly-marked v1.0 COPY in this repo's canon-source/. NOT the canonical home,
+	// NOT the un-ratified v1.1 candidate. GITHUB_TOKEN is a SECRET (private repo) — `wrangler secret put`,
+	// never here, never inlined. For local dev it lives in .dev.vars (gitignored).
+	"vars": {
+		"CANON_SOURCE_REPO": "lexziconAI/axiom-canon-mcp",
+		"CANON_SOURCE_PATH": "canon-source/COLONY_CANON.v1.0.proof.md",
+		"CANON_SOURCE_REF": "main",
+		"ALLOWED_ORIGIN": "https://claude.ai",
+		"MAX_SOURCE_AGE_SECONDS": "0"
+	}
+}
