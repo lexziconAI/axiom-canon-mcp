@@ -13,9 +13,9 @@
 	// never here, never inlined. For local dev it lives in .dev.vars (gitignored).
 	"vars": {
 		"CANON_SOURCE_REPO": "lexziconAI/axiom-canon-mcp",
-		"CANON_SOURCE_PATH": "canon-source/COLONY_CANON.v1.0.proof.md",
+		"CANON_SOURCE_PATH": "canon-source/COLONY_CANON.md",
 		"CANON_SOURCE_REF": "master",
 		"ALLOWED_ORIGIN": "https://claude.ai",
-		"MAX_SOURCE_AGE_SECONDS": "0"
+		"MAX_SOURCE_AGE_SECONDS": "86400"
 	}
 }

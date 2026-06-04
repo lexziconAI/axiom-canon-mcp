@@ -1,3 +1,6 @@
+<!-- 🧊 FROZEN / DEPRECATED 2026-06-05 — DO NOT EDIT. Superseded by canon-source/COLONY_CANON.md (v1.1, LIVE).
+     This v1.0 proof copy is retained for provenance only and is NO LONGER the served source.
+     Editing THIS file has ZERO effect on live canon — edit COLONY_CANON.md instead. (canon v1.1 go-live, Morpheus) -->
 <!-- ⚠️ PROOF SOURCE — NON-CANONICAL. A copy of COLONY_CANON v1.0 used ONLY to test the canon-MCP pipe.
      NOT the canonical home. NOT the un-ratified v1.1 candidate. Swapping to the ratified canon = config change. -->
 
