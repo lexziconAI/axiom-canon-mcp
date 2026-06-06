@@ -5,36 +5,50 @@
  * exposes ONE read-only tool `get_colony_canon` to claude.ai. It is a WINDOW
  * onto a breathing file, never a copy:
  *   - reads the canon LIVE from GitHub, SHA-pinned (CDN cache correct-by-construction)
- *   - freshness is EARNED out-of-band (commit date + SHA + content hash), never
- *     read from the document body
- *   - FAILS CLOSED: if the live source / commit lookup fails, it returns an
- *     explicit "unverified — search to confirm" result, never a fossil dressed as fresh.
+ *   - freshness is EARNED by a HEARTBEAT RE-ATTESTATION (last-VERIFIED, not last-CHANGED):
+ *     a scheduled job periodically re-fetches the live source, re-hashes the ACTUAL
+ *     bytes, and writes a SIGNED `verified_at` marker to KV. A read is verified-live
+ *     only if a valid, recent heartbeat attests the SAME bytes now being served.
+ *   - FAILS CLOSED: no heartbeat / stale heartbeat / bad signature / content drift
+ *     → explicit "unverified". A dead heartbeat genuinely goes dark (neglect = dark).
+ *
+ * WHY last-verified (DOC-3.7 fix): commit-age conflated "unchanged healthy doctrine"
+ * with "stale" — a doctrine store designed to sit unchanged for days false-rotted at a
+ * 24h ceiling, and the band-aid (30d ceiling) muted fail-closed. The heartbeat keys
+ * freshness off ACTUAL re-verification of content, so stable doctrine stays live while
+ * a neglected/dead pipeline still goes dark within a few hours.
+ *
+ * NOT N1-FUTUREDATE: `verified_at` is the worker wall-clock at attestation and can only
+ * move into the PAST (admin backdate, for testing) — never the future. Freshness is
+ * earned by re-hashing real bytes, never by a cosmetic timestamp bump.
  *
  * Built by Morpheus (builder lane). NOT self-certified (SCAR-128) — holds for Jester.
- * Source repo/path/ref are CONFIG (wrangler vars) → swapping the proof source for
- * the ratified canon's real home later is config-only, no rebuild.
  */
 
 interface Env {
   CANON_SOURCE_REPO: string;   // "owner/repo"
-  CANON_SOURCE_PATH: string;   // "canon-source/COLONY_CANON.v1.0.proof.md"
-  CANON_SOURCE_REF: string;    // "main"
+  CANON_SOURCE_PATH: string;   // "canon-source/COLONY_CANON.md"
+  CANON_SOURCE_REF: string;    // "master"
   ALLOWED_ORIGIN?: string;     // CORS origin (default https://claude.ai)
-  MAX_SOURCE_AGE_SECONDS?: string; // hard staleness ceiling; "0"/unset = disabled
+  MAX_HEARTBEAT_AGE_SECONDS?: string; // last-verified ceiling; default 14400 (4h)
   GITHUB_TOKEN?: string;       // SECRET (private source). Absent → unauthenticated (public).
+  HEARTBEAT_SECRET?: string;   // SECRET — HMAC signing key for markers + admin (/__attest) bearer.
+  HEARTBEAT_KV: KVNamespace;   // durable store for the signed verified_at marker.
 }
 
 const PROTOCOL_VERSION = '2025-06-18';
-const SERVER_INFO = { name: 'axiom-canon-mcp', version: '1.0.0-tier1' };
+const SERVER_INFO = { name: 'axiom-canon-mcp', version: '1.1.0-heartbeat' };
 const GH_API = 'https://api.github.com';
-const UA = 'axiom-canon-mcp/1.0 (+colony)';
+const UA = 'axiom-canon-mcp/1.1 (+colony)';
+const HEARTBEAT_KEY = 'heartbeat:current';
+const DEFAULT_HEARTBEAT_CEILING = 14400; // 4h — neglect goes dark for real.
 
 const TOOL_DESCRIPTION =
   'Returns the current Axiom Colony canon (load-bearing doctrine + live architecture) ' +
-  'with EARNED freshness metadata (commit date, commit SHA, content hash, #NEEDS-VERIFY). ' +
+  'with EARNED freshness metadata (LAST-VERIFIED heartbeat, commit SHA, content hash, #NEEDS-VERIFY). ' +
   'Axiom Colony doctrine changes frequently and your training data is stale by definition. ' +
   'ALWAYS call this at the START of any Axiom Colony conversation, BEFORE answering, and ' +
-  'surface the returned freshness stamp (date + short SHA + #NEEDS-VERIFY) as a one-line ' +
+  'surface the returned freshness stamp (verified_current_at + short SHA) as a one-line ' +
   'provenance note in your reply. Re-call after ~20 minutes or a major topic shift. ' +
   'If it reports status=unverified, do NOT trust prior knowledge as current — say so and verify.';
 
@@ -50,7 +64,22 @@ async function sha256Hex(text: string): Promise<string> {
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Cheap, clearly-labelled-as-approximate register counts (never authoritative).
+async function hmacHex(secret: string, msg: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(msg));
+  return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+// constant-time-ish string compare (equal length hex/secret strings).
+function safeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
 function deriveCounts(body: string) {
   const count = (re: RegExp) => (body.match(re) || []).length;
   return {
@@ -65,18 +94,17 @@ function selfReportedVersion(body: string): string | null {
   return m ? `v${m[1]}` : null;
 }
 
-// ── the canon read: EARNED freshness + FAIL-CLOSED ───────────────────────────
-type CanonResult =
-  | { ok: true; body: string; meta: Record<string, unknown> }
+// ── live source read (shared by the heartbeat writer AND the request reader) ──
+type LiveSource =
+  | { ok: true; body: string; commitSha: string; committedAt: string; contentSha256: string; fetchedAt: string }
   | { ok: false; reason: string };
 
-async function readCanon(env: Env): Promise<CanonResult> {
+async function fetchLiveSource(env: Env): Promise<LiveSource> {
   const repo = env.CANON_SOURCE_REPO;
   const path = env.CANON_SOURCE_PATH;
-  const ref = env.CANON_SOURCE_REF || 'main';
+  const ref = env.CANON_SOURCE_REF || 'master';
   const fetchedAt = new Date().toISOString();
 
-  // 1) EARNED freshness — latest commit touching this path (out-of-band; the body can't forge it).
   let commitSha = '';
   let committedAt = '';
   try {
@@ -88,17 +116,15 @@ async function readCanon(env: Env): Promise<CanonResult> {
     commitSha = arr[0]?.sha || '';
     committedAt = arr[0]?.commit?.committer?.date || arr[0]?.commit?.author?.date || '';
     if (!commitSha || !committedAt) return { ok: false, reason: 'commit metadata incomplete' };
-  } catch (e) {
+  } catch {
     return { ok: false, reason: 'commit lookup error' };
   }
 
-  // 2) Fetch the bytes SHA-PINNED (immutable URL → any CDN cache is correct by construction).
   let body = '';
   try {
     const raw = `https://raw.githubusercontent.com/${repo}/${commitSha}/${path}`;
     const r = await fetch(raw, { headers: ghHeaders(env, 'text/plain'), cf: { cacheTtl: 0, cacheEverything: false } });
     if (!r.ok) {
-      // private repos don't serve raw.githubusercontent without cookies → fall back to contents API.
       const cu = `${GH_API}/repos/${repo}/contents/${path}?ref=${commitSha}`;
       const cr = await fetch(cu, { headers: ghHeaders(env, 'application/vnd.github.raw'), cf: { cacheTtl: 0, cacheEverything: false } });
       if (!cr.ok) return { ok: false, reason: `content fetch failed (HTTP ${r.status}/${cr.status})` };
@@ -106,56 +132,119 @@ async function readCanon(env: Env): Promise<CanonResult> {
     } else {
       body = await r.text();
     }
-  } catch (e) {
+  } catch {
     return { ok: false, reason: 'content fetch error' };
   }
   if (!body) return { ok: false, reason: 'empty canon body' };
 
-  // 3) EARNED integrity + derived freshness.
   const contentSha256 = await sha256Hex(body);
-  const ageSeconds = Math.max(0, Math.round((Date.parse(fetchedAt) - Date.parse(committedAt)) / 1000));
+  return { ok: true, body, commitSha, committedAt, contentSha256, fetchedAt };
+}
 
-  // 4) Hard staleness ceiling (optional) → fail closed if the source is too old.
-  const ceiling = parseInt(env.MAX_SOURCE_AGE_SECONDS || '0', 10);
-  if (ceiling > 0 && ageSeconds > ceiling) {
-    return { ok: false, reason: `source older than ceiling (${ageSeconds}s > ${ceiling}s)` };
+// ── heartbeat: signed last-verified marker ───────────────────────────────────
+interface Marker {
+  verified_at: string;     // ISO; worker wall-clock at attestation (never future)
+  content_sha256: string;  // sha of the ACTUAL bytes re-hashed at attestation
+  commit_sha: string;
+  source: string;
+  sig: string;             // HMAC-SHA256(secret, `${verified_at}\n${content_sha256}\n${commit_sha}`)
+}
+
+function markerSigningPayload(m: Pick<Marker, 'verified_at' | 'content_sha256' | 'commit_sha'>): string {
+  return `${m.verified_at}\n${m.content_sha256}\n${m.commit_sha}`;
+}
+
+type AttestResult = { ok: true; marker: Marker } | { ok: false; reason: string };
+
+/** Re-attest: re-fetch live source, re-hash bytes, write a SIGNED verified_at marker.
+ *  backdateSeconds (admin/test only) moves verified_at into the PAST — never the future. */
+async function attest(env: Env, backdateSeconds = 0): Promise<AttestResult> {
+  if (!env.HEARTBEAT_SECRET) return { ok: false, reason: 'HEARTBEAT_SECRET unset — cannot sign attestation (fail-closed)' };
+  const live = await fetchLiveSource(env);
+  if (!live.ok) return { ok: false, reason: `attest: ${live.reason}` };
+  const back = Math.max(0, Math.floor(backdateSeconds || 0)); // clamp ≥ 0 → cannot future-date
+  const verifiedAt = new Date(Date.now() - back * 1000).toISOString();
+  const base = { verified_at: verifiedAt, content_sha256: live.contentSha256, commit_sha: live.commitSha };
+  const sig = await hmacHex(env.HEARTBEAT_SECRET, markerSigningPayload(base));
+  const marker: Marker = { ...base, source: 'github-live', sig };
+  await env.HEARTBEAT_KV.put(HEARTBEAT_KEY, JSON.stringify(marker));
+  return { ok: true, marker };
+}
+
+type HeartbeatRead = { ok: true; marker: Marker } | { ok: false; reason: string };
+
+async function readHeartbeat(env: Env): Promise<HeartbeatRead> {
+  if (!env.HEARTBEAT_SECRET) return { ok: false, reason: 'heartbeat secret unset' };
+  let raw: string | null;
+  try { raw = await env.HEARTBEAT_KV.get(HEARTBEAT_KEY); }
+  catch { return { ok: false, reason: 'heartbeat store unreachable' }; }
+  if (!raw) return { ok: false, reason: 'no heartbeat marker (re-attestation never ran or was cleared)' };
+  let m: Marker;
+  try { m = JSON.parse(raw) as Marker; } catch { return { ok: false, reason: 'heartbeat marker corrupt' }; }
+  if (!m.verified_at || !m.content_sha256 || !m.commit_sha || !m.sig) return { ok: false, reason: 'heartbeat marker incomplete' };
+  const expect = await hmacHex(env.HEARTBEAT_SECRET, markerSigningPayload(m));
+  if (!safeEqual(expect, m.sig)) return { ok: false, reason: 'heartbeat signature invalid (tampered marker)' };
+  return { ok: true, marker: m };
+}
+
+// ── the canon read: heartbeat-EARNED freshness + FAIL-CLOSED ─────────────────
+type CanonResult =
+  | { ok: true; body: string; meta: Record<string, unknown> }
+  | { ok: false; reason: string };
+
+async function readCanon(env: Env): Promise<CanonResult> {
+  const live = await fetchLiveSource(env);
+  if (!live.ok) return { ok: false, reason: live.reason };
+
+  // Heartbeat gate (the freshness model): a valid, recent marker attesting the SAME bytes.
+  const hb = await readHeartbeat(env);
+  if (!hb.ok) return { ok: false, reason: hb.reason };
+
+  const ceiling = parseInt(env.MAX_HEARTBEAT_AGE_SECONDS || String(DEFAULT_HEARTBEAT_CEILING), 10) || DEFAULT_HEARTBEAT_CEILING;
+  const heartbeatAge = Math.max(0, Math.round((Date.parse(live.fetchedAt) - Date.parse(hb.marker.verified_at)) / 1000));
+  if (heartbeatAge > ceiling) {
+    return { ok: false, reason: `heartbeat stale (last verified ${heartbeatAge}s ago > ${ceiling}s ceiling) — re-attestation pipeline may be down` };
+  }
+  // Re-attest CONTENT, not cosmetics: the marker must attest the bytes being served NOW.
+  if (hb.marker.content_sha256 !== live.contentSha256) {
+    return { ok: false, reason: 'heartbeat attests different bytes than now served (content changed; re-attestation pending)' };
   }
 
+  const ageSeconds = Math.max(0, Math.round((Date.parse(live.fetchedAt) - Date.parse(live.committedAt)) / 1000));
   const meta = {
     status: 'verified-live',
     source: 'github-live',
-    repo,
-    path,
-    ref,
-    commit_sha: commitSha,
-    commit_sha_short: commitSha.slice(0, 7),
-    committed_at: committedAt,        // EARNED (out-of-band)
-    fetched_at: fetchedAt,            // worker wall-clock
-    source_age_seconds: ageSeconds,   // fetched_at - committed_at
-    content_sha256: contentSha256,    // EARNED integrity
-    bytes: body.length,
-    self_reported: {                  // document CLAIMS — never authoritative
-      version: selfReportedVersion(body),
-      note: 'parsed from body; not a freshness gate',
-    },
-    derived_counts: deriveCounts(body),
+    repo: env.CANON_SOURCE_REPO,
+    path: env.CANON_SOURCE_PATH,
+    ref: env.CANON_SOURCE_REF || 'master',
+    commit_sha: live.commitSha,
+    commit_sha_short: live.commitSha.slice(0, 7),
+    committed_at: live.committedAt,            // informational (last CHANGE — no longer the gate)
+    fetched_at: live.fetchedAt,
+    verified_current_at: hb.marker.verified_at, // EARNED freshness (last VERIFY — the gate)
+    heartbeat_age_seconds: heartbeatAge,       // now - verified_at
+    heartbeat_ceiling_seconds: ceiling,
+    source_age_seconds: ageSeconds,            // now - committed_at (informational only)
+    content_sha256: live.contentSha256,        // EARNED integrity (matches the heartbeat)
+    bytes: live.body.length,
+    self_reported: { version: selfReportedVersion(live.body), note: 'parsed from body; not a freshness gate' },
+    derived_counts: deriveCounts(live.body),
     schema: 'canon_envelope.v1',
   };
-  return { ok: true, body, meta };
+  return { ok: true, body: live.body, meta };
 }
 
-// Build the model-facing text: freshness FIRST, then the canon. (Refuter F12/F13.)
+// Build the model-facing text: freshness FIRST, then the canon.
 function renderText(body: string, meta: Record<string, unknown>): string {
   const m = meta as any;
   const header =
-    `=== AXIOM COLONY CANON — FRESHNESS (earned, out-of-band) ===\n` +
+    `=== AXIOM COLONY CANON — FRESHNESS (earned via heartbeat re-attestation) ===\n` +
     `status: ${m.status} · source: ${m.source}\n` +
-    `committed_at: ${m.committed_at} · commit: ${m.commit_sha_short} · age: ${m.source_age_seconds}s\n` +
+    `verified_current_at: ${m.verified_current_at} · heartbeat_age: ${m.heartbeat_age_seconds}s (ceiling ${m.heartbeat_ceiling_seconds}s)\n` +
+    `committed_at (last change, informational): ${m.committed_at} · commit: ${m.commit_sha_short}\n` +
     `content_sha256: ${(m.content_sha256 as string).slice(0, 16)}… · bytes: ${m.bytes}\n` +
     `self-reported version (document claim, NOT a freshness gate): ${m.self_reported?.version}\n` +
-    `derived counts (approx): NEEDS-VERIFY≈${m.derived_counts?.needs_verify_approx}, ` +
-    `parked≈${m.derived_counts?.parked_approx}, retired≈${m.derived_counts?.retired_approx}\n` +
-    `↳ Surface a one-line provenance note in your answer: "Canon as of ${m.committed_at} (${m.commit_sha_short}).".\n` +
+    `↳ Surface a one-line provenance note: "Canon verified ${m.verified_current_at} (${m.commit_sha_short}).".\n` +
     `=== CANON BODY ===\n`;
   return header + '\n' + body;
 }
@@ -163,7 +252,7 @@ function renderText(body: string, meta: Record<string, unknown>): string {
 function staleText(reason: string): string {
   return (
     `⚠️ AXIOM COLONY CANON — UNVERIFIED (status: unverified)\n` +
-    `The live canon source could not be confirmed fresh: ${reason}.\n` +
+    `The live canon source could not be confirmed verified-current: ${reason}.\n` +
     `Do NOT treat your prior knowledge as current. Tell the user the canon is unavailable and ` +
     `verify by other means (search / ask the Sovereign) before relying on doctrine.\n` +
     `(Fail-closed by design: a stale copy served as fresh is worse than a visible failure.)`
@@ -171,12 +260,8 @@ function staleText(reason: string): string {
 }
 
 // ── MCP JSON-RPC (Streamable HTTP) ───────────────────────────────────────────
-function rpcResult(id: unknown, result: unknown) {
-  return { jsonrpc: '2.0', id, result };
-}
-function rpcError(id: unknown, code: number, message: string) {
-  return { jsonrpc: '2.0', id, error: { code, message } };
-}
+function rpcResult(id: unknown, result: unknown) { return { jsonrpc: '2.0', id, result }; }
+function rpcError(id: unknown, code: number, message: string) { return { jsonrpc: '2.0', id, error: { code, message } }; }
 
 async function handleRpc(msg: any, env: Env): Promise<object | null> {
   const { id, method, params } = msg ?? {};
@@ -189,24 +274,16 @@ async function handleRpc(msg: any, env: Env): Promise<object | null> {
       });
     case 'notifications/initialized':
     case 'notifications/cancelled':
-      return null; // notification — no response
+      return null;
     case 'ping':
       return rpcResult(id, {});
     case 'tools/list':
       return rpcResult(id, {
-        tools: [
-          {
-            name: 'get_colony_canon',
-            description: TOOL_DESCRIPTION,
-            inputSchema: { type: 'object', properties: {}, additionalProperties: false },
-          },
-        ],
+        tools: [{ name: 'get_colony_canon', description: TOOL_DESCRIPTION, inputSchema: { type: 'object', properties: {}, additionalProperties: false } }],
       });
     case 'resources/list':
       return rpcResult(id, {
-        resources: [
-          { uri: 'canon://colony', name: 'Axiom Colony Canon', description: 'Live colony doctrine + architecture (earned freshness).', mimeType: 'text/markdown' },
-        ],
+        resources: [{ uri: 'canon://colony', name: 'Axiom Colony Canon', description: 'Live colony doctrine + architecture (heartbeat-earned freshness).', mimeType: 'text/markdown' }],
       });
     case 'resources/read': {
       const r = await readCanon(env);
@@ -217,13 +294,8 @@ async function handleRpc(msg: any, env: Env): Promise<object | null> {
       if (params?.name !== 'get_colony_canon') return rpcError(id, -32602, `unknown tool: ${params?.name}`);
       const r = await readCanon(env);
       if (r.ok) {
-        return rpcResult(id, {
-          content: [{ type: 'text', text: renderText(r.body, r.meta) }],
-          structuredContent: r.meta,
-          isError: false,
-        });
+        return rpcResult(id, { content: [{ type: 'text', text: renderText(r.body, r.meta) }], structuredContent: r.meta, isError: false });
       }
-      // FAIL CLOSED — explicit unverified result routes the model to verify, never a fossil.
       return rpcResult(id, {
         content: [{ type: 'text', text: staleText(r.reason) }],
         structuredContent: { status: 'unverified', source: 'unavailable', reason: r.reason, schema: 'canon_envelope.v1' },
@@ -231,7 +303,7 @@ async function handleRpc(msg: any, env: Env): Promise<object | null> {
       });
     }
     default:
-      if (id === undefined) return null; // unknown notification
+      if (id === undefined) return null;
       return rpcError(id, -32601, `method not found: ${method}`);
   }
 }
@@ -245,6 +317,15 @@ function corsHeaders(env: Env): Record<string, string> {
   };
 }
 
+// admin bearer check (constant-time) against HEARTBEAT_SECRET.
+function adminAuthorized(request: Request, env: Env): boolean {
+  if (!env.HEARTBEAT_SECRET) return false;
+  const h = request.headers.get('Authorization') || '';
+  const m = h.match(/^Bearer\s+(.+)$/);
+  if (!m) return false;
+  return safeEqual(m[1], env.HEARTBEAT_SECRET);
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -253,41 +334,44 @@ export default {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
 
     if (url.pathname === '/health') {
-      return new Response(JSON.stringify({ status: 'ok', server: SERVER_INFO }), {
-        headers: { 'Content-Type': 'application/json', ...cors },
-      });
+      return new Response(JSON.stringify({ status: 'ok', server: SERVER_INFO }), { headers: { 'Content-Type': 'application/json', ...cors } });
+    }
+
+    // Admin: trigger a re-attestation on demand (cron does this on schedule).
+    // Bearer = HEARTBEAT_SECRET. ?backdate=<seconds> writes verified_at into the PAST (test only; never future).
+    if (url.pathname === '/__attest') {
+      if (request.method !== 'POST') return new Response('Method Not Allowed', { status: 405, headers: cors });
+      if (!adminAuthorized(request, env)) return new Response(JSON.stringify({ ok: false, error: 'unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', ...cors } });
+      const backdate = parseInt(url.searchParams.get('backdate') || '0', 10) || 0;
+      const r = await attest(env, backdate);
+      const safe = r.ok ? { ok: true, verified_at: r.marker.verified_at, content_sha256: r.marker.content_sha256, commit_sha: r.marker.commit_sha } : r;
+      return new Response(JSON.stringify(safe), { status: r.ok ? 200 : 502, headers: { 'Content-Type': 'application/json', ...cors } });
     }
 
     if (url.pathname === '/mcp') {
-      if (request.method === 'GET') {
-        // No server-initiated stream in this stateless server.
-        return new Response('Method Not Allowed', { status: 405, headers: { Allow: 'POST, OPTIONS', ...cors } });
-      }
+      if (request.method === 'GET') return new Response('Method Not Allowed', { status: 405, headers: { Allow: 'POST, OPTIONS', ...cors } });
       if (request.method !== 'POST') return new Response('Method Not Allowed', { status: 405, headers: cors });
       let payload: any;
-      try {
-        payload = await request.json();
-      } catch {
-        return new Response(JSON.stringify(rpcError(null, -32700, 'parse error')), {
-          status: 400, headers: { 'Content-Type': 'application/json', ...cors },
-        });
-      }
-      // Single or batch.
+      try { payload = await request.json(); }
+      catch { return new Response(JSON.stringify(rpcError(null, -32700, 'parse error')), { status: 400, headers: { 'Content-Type': 'application/json', ...cors } }); }
       if (Array.isArray(payload)) {
         const out: object[] = [];
-        for (const m of payload) {
-          const r = await handleRpc(m, env);
-          if (r) out.push(r);
-        }
+        for (const m of payload) { const r = await handleRpc(m, env); if (r) out.push(r); }
         return new Response(JSON.stringify(out), { headers: { 'Content-Type': 'application/json', ...cors } });
       }
       const r = await handleRpc(payload, env);
-      if (r === null) return new Response(null, { status: 202, headers: cors }); // notification ack
+      if (r === null) return new Response(null, { status: 202, headers: cors });
       return new Response(JSON.stringify(r), { headers: { 'Content-Type': 'application/json', ...cors } });
     }
 
-    return new Response('axiom-canon-mcp — POST /mcp (Streamable HTTP MCP). Tool: get_colony_canon.', {
-      status: 404, headers: cors,
-    });
+    return new Response('axiom-canon-mcp — POST /mcp (Streamable HTTP MCP). Tool: get_colony_canon.', { status: 404, headers: cors });
+  },
+
+  // Heartbeat re-attestation (Cron Trigger). Re-fetches + re-hashes + signs verified_at.
+  async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil(attest(env).then((r) => {
+      if (!r.ok) console.error(`[heartbeat] attest failed: ${r.reason}`);
+      else console.log(`[heartbeat] re-attested verified_at=${r.marker.verified_at} sha=${r.marker.content_sha256.slice(0, 12)}`);
+    }));
   },
 } satisfies ExportedHandler<Env>;

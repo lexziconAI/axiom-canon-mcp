@@ -16,6 +16,19 @@
 		"CANON_SOURCE_PATH": "canon-source/COLONY_CANON.md",
 		"CANON_SOURCE_REF": "master",
 		"ALLOWED_ORIGIN": "https://claude.ai",
-		"MAX_SOURCE_AGE_SECONDS": "86400"
+		"MAX_HEARTBEAT_AGE_SECONDS": "14400"
+	},
+
+	// ── Heartbeat re-attestation (DOC-3.7 fix: last-VERIFIED, not commit-age) ──
+	// A cron re-fetches the live canon source, re-hashes the ACTUAL bytes, and writes
+	// a SIGNED verified_at marker to KV. A read is verified-live only if a valid,
+	// recent (<= MAX_HEARTBEAT_AGE_SECONDS) heartbeat attests the SAME bytes served now.
+	// A dead heartbeat goes dark within the ceiling (4h). HEARTBEAT_SECRET = SECRET
+	// (HMAC signing key + /__attest admin bearer): `wrangler secret put HEARTBEAT_SECRET`.
+	"kv_namespaces": [
+		{ "binding": "HEARTBEAT_KV", "id": "779cb9744c054794a9e8bce2172870bd" }
+	],
+	"triggers": {
+		"crons": ["*/30 * * * *"]
 	}
 }
