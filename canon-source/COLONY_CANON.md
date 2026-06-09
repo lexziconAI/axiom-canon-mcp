@@ -73,6 +73,7 @@ never renumbered. A retired doctrine keeps its id with `status:RETIRED`.
 | `DOC-3.7` | Fail closed, not open | v1.1 | ACTIVE |
 | `DOC-3.8` | Commit the floor between tiers | v1.1 | ACTIVE |
 | `DOC-3.9` | Canon supersedes log | v1.1 | ACTIVE |
+| `DOC-3.10` | Measured-rigor — the auditor is watched, not trusted | v1.1 | ACTIVE |
 
 ---
 
@@ -218,6 +219,35 @@ green result over a shifting tree certifies nothing (atomicity under live edit).
 Logs accumulate (noise-prone). Canon supersedes (small, current). Apply the supersede discipline to memory
 itself. *Provenance:* handoff §9, confirmed "Empirical testing and archive verification" 2026-06-01.
 <!-- /DOC:DOC-3.9 -->
+
+<!-- DOC:DOC-3.10 v:1.0 status:ACTIVE -->
+## 3.10 MEASURED-RIGOR — the auditor is watched, not trusted (certifier ≠ its-own-watcher)  [DOC-3.10]
+SCAR-128 (DOC-3.4) separates build from audit. This separates audit from the audit-OF-the-audit: a verifier
+that grades its own rigor is the leveller→oracle collapse — the rubber stamp an optimising swarm learns to
+satisfy. The certifier's rigor is MEASURED, never asserted.
+1. SEEDED-DEFECT CANARY-STREAM. Known-bad artifacts are injected into the cert intake, INDISTINGUISHABLE from
+   real REQs (re-skinned from the real defect archive; no structural marker; randomised cadence; the
+   canary→expected-verdict ledger withheld from the certifier). A PASS on a known-bad = a caught auditor
+   regression. The rolling PER-TIER catch-rate is the auditor's rigor, on the record; a significant drop HALTS
+   promotion (fail-closed, DOC-3.7) — a loud alarm, not a silent slide.
+2. CERTIFIER ≠ ITS-OWN-WATCHER, regress terminated. The watcher-of-the-watcher is a TRIVIALLY-AUDITABLE
+   deterministic checker (verdict-vs-pre-registered-label; no model, no judgment) + a human root (Sovereign) +
+   a family-diverse second verifier. If the watcher isn't simple enough to audit by eye, it has only relocated
+   the trust. Issuer ≠ certifier ≠ builder.
+3. AUDITOR-AS-CODE-PATH (DOC-3.5 applied to the auditor). The cert's rigor-critical properties — trusted
+   model-id (allowlist), full re-derivation transcript, live-probe evidence — are STRUCTURAL attestations in
+   the verdict, machine-checked; a verdict lacking them is INVALID. "Don't cheap out the auditor" is
+   GATE-AS-CODE here, not a prompt; the canary-stream is the behavioural backstop proving the attestation
+   wasn't forged.
+4. PRECONDITION ON FULL-TRUST. This guard gates the autonomy transition itself. The colony does NOT lower the
+   human-relay — move to autonomous looping or DW-fan-out-as-primary-build (§6 step 4) — until (i) the
+   canary-stream + auditor-as-code-path are built and green, and (ii) the cert intake is AUTHENTICATED (signed
+   REQs; today's unsigned, self-asserted `from:` is spoofable — wildcard-authorship class). These join DOC-3.5's
+   GATE-AS-CODE proof as conditions of the same transition. Rationale: leveller→oracle collapse is redundant
+   with an engaged human watcher and lethal without one — the guard must exist before the human steps back.
+Provenance: Sovereign pre-mortem 2026-06-10 (leveller→oracle collapse); Delta diagnosis (propose-only, cert-bus
+mechanics @ 8b969c8). Composes with DOC-0, DOC-3.4/SCAR-128, DOC-3.5/GATE-AS-CODE, DOC-3.7/fail-closed.
+<!-- /DOC:DOC-3.10 -->
 
 <!-- CANON:DOCTRINE-END — new doctrine (canon_delta operation:add) is inserted immediately BEFORE this anchor; Contract B. Supersede/retire key on each DOC:<id> marker and ignore this anchor. -->
 
