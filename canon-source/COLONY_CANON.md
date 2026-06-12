@@ -64,6 +64,7 @@ never renumbered. A retired doctrine keeps its id with `status:RETIRED`.
 | ID | Title | Born | Status |
 |---|---|---|---|
 | `DOC-0`   | Anti-rot protocol (how the canon stays alive) | v1.1 | ACTIVE |
+| `DOC-2-ROSTER` | The roster — three tiers, 16 agents | v1.1 | ACTIVE |
 | `DOC-3.1` | Tensor Tympani — verified readiness, two tempos | v1.1 | ACTIVE |
 | `DOC-3.2` | The four readiness gates (PREMISE/STATE/INSTRUMENT/REVERSIBILITY) | v1.1 | ACTIVE |
 | `DOC-3.3` | Honesty markers — VERIFIED / ATTESTED / ASSUMED | v1.1 | ACTIVE |
@@ -104,7 +105,13 @@ suite. The colony is the instrument through which the constitutional-AI research
 
 ---
 
-## 2. THE ROSTER (lanes — one writer per file/concept at a time)
+<!-- DOC:DOC-2-ROSTER v:1.1 status:ACTIVE block_sha256:c34128ad08f51fb70b83d17e8a150b7947d7c9ff7f4e507f73fdfccd7788aa36 -->
+## 2. THE ROSTER — three tiers, 16 agents (lanes — one writer per file/concept at a time)  [DOC-2-ROSTER]
+
+✅ VERIFIED-IN-RECORD (Burner scout 2026-06-12; Delta confirm relayed 2026-06-12 with the Sovereign's
+increment directive; `colony-roster.mjs` read on disk same turn). *Supersedes the v1.1 7-agent table.*
+
+**INFRA (7)** — the colony's own machinery:
 
 | Agent | Lane | Mutates? | Certifies? |
 |---|---|---|---|
@@ -116,6 +123,17 @@ suite. The colony is the instrument through which the constitutional-AI research
 | **Delta** | diagnostician / cold-auditor (propose-only) | ❌ | ❌ |
 | **Orpheus** | scribe | ❌ | ❌ |
 
+**PRODUCT (3)** — product lanes:
+
+| Agent | Lane |
+|---|---|
+| **Alpha** | drbot + popper |
+| **Beta** | drug-discovery (env quarantined 2026-05-31) |
+| **Psi** | front-end |
+
+**RESERVE (6)** — named, not active lanes: **Sigma** (lane unconfirmed — active artifacts exist) ·
+**Omega** · **Lambda** · **Rho** · **Theta** · **Kappa**.
+
 **HARD LINE:** Jester is *never* given an acting posture. An acting Jester mutates what it audits and breaks
 the integrity backbone that has caught this arc's mistakes. Jester read-only is its role; Jester-that-builds
 is the antipattern SCAR-128 exists to prevent.
@@ -123,6 +141,12 @@ is the antipattern SCAR-128 exists to prevent.
 **Attribution:** every agent session must carry `AXIOM_AGENT=<role>` in its launching shell. The wrapper
 `axwake <role>` does this (validates against the roster, exports the var, launches claude). 📋 ATTESTED (built +
 Jester-gated CLEAN this arc; standardize on `AXIOM_AGENT`, NOT the divergent `AGENT_NAME` the hook ignores).
+
+**Single roster source:** `/root/axiom/colony/colony-roster.mjs` is THE emit-roster source; `axwake`,
+`AGENT_ENUM` (server-remote.js) and HEARTBEAT-CONVENTION.md derive from it. ⏳ derivation lands next
+increment — today's on-disk ROSTER export is 11 names (burner/psi/lambda/theta/kappa not yet in the emit
+enum; read this turn 2026-06-12), so until that increment this table and the file reconcile BY HAND, not by code.
+<!-- /DOC:DOC-2-ROSTER -->
 
 ---
 
@@ -180,7 +204,7 @@ prompt. *This is the prerequisite safety proof for ever going full-trust.*
 *Provenance:* voice-loop pilot gate, JESTER_*_20260601.md.
 <!-- /DOC:DOC-3.5 -->
 
-<!-- DOC:DOC-3.6 v:1.1 status:ACTIVE block_sha256:98fe38170082dedd5a17662664c67b0994ed0bffc9572355b0e567a60de21a1e -->
+<!-- DOC:DOC-3.6 v:1.1 status:ACTIVE block_sha256:f037ac0c1a666906b1167c2183618f3796ea1a2de6cbfabe5311cf4363bdf1f9 -->
 ### 3.6 Regex God / Cerebras routing — landing-strip, not cage ✅ VERIFIED-IN-RECORD  [DOC-3.6]
 gpt-oss-120b is a **reasoner first, tagger second**. Let it think freely; extract structured tags from
 *anywhere* in the raw response. The canonical locks:
@@ -193,11 +217,11 @@ gpt-oss-120b is a **reasoner first, tagger second**. Let it think freely; extrac
 - **Direct SDK, not sidecar**, for 120b.
 - Model tiers: **120b** → reasoning-quality tasks · **70b** → generation · **8b** → cheap/fast only.
 *Provenance:* CEREBRAS DOCTRINE #15, PSI 2026-03-19 (memory #15); re-confirmed optimised "Building a knowledge ledger" 2026-05-26.
-*⚠️ Routing note — SUPERSEDED (📋 ATTESTED-needs-Delta-confirm):* the v1.0 line said `.env` CEREBRAS_BASE_URL
-pointed at a DEAD onrender relay (route directly to `https://api.cerebras.ai/v1/chat/completions`). This session
-reports that premise CORRECTED — `/think` is healthy (live :3333/health returned 200 with `cerebras:true`,
-`cerebras_model:gpt-oss-120b`, observed this turn). This is ATTESTED on a single live probe; the dead-relay
-premise appears stale. **Delta must confirm before this is promoted to ✅ VERIFIED.**
+*⚠️ Routing note — SUPERSEDED, now ✅ VERIFIED (Delta confirm relayed 2026-06-12 with the Sovereign's
+increment directive; Burner scout 2026-06-12):* the v1.0 line said `.env` CEREBRAS_BASE_URL pointed at a
+DEAD onrender relay (route directly to `https://api.cerebras.ai/v1/chat/completions`). That premise is
+stale — `/think` is healthy: live :3333/health 200 with `cerebras:true`, `cerebras_model:gpt-oss-120b`,
+re-probed 2026-06-12 this turn. (⚠️ the :3333 service now self-identifies `deep-research-skill` — see §4.)
 <!-- /DOC:DOC-3.6 -->
 
 <!-- DOC:DOC-3.7 v:1.1 status:ACTIVE block_sha256:aaee1a77a29450be90c8847e2218ea236176877ad1586f14dd5791dee2b7c69f -->
@@ -259,16 +283,20 @@ mechanics @ 8b969c8). Composes with DOC-0, DOC-3.4/SCAR-128, DOC-3.5/GATE-AS-COD
 scar-api `:3041` · marae `:3050` · state-store `:3060` · scar-bridge `:3061` (WITNESS_ENFORCE=shadow) ·
 watcher `:3070` · shield `:3071` · beacon `:3072` · **sentinel/axiom-sidecar `:8089`** (the Gemini brain —
 `/consult` + sport routes; speaks a *different* protocol from :3333, 404s on `/think`) · observatory `:3074` ·
-provenance `:3075`. `sovereign-router` ⚰️ **RETIRED** (📋 ATTESTED-needs-Delta-confirm — v1.0 said
-"intentionally stopped"; this session's correction RETIRES it; needs Delta confirm before ✅ VERIFIED) ·
-`tt-compose` online.
+provenance `:3075`. `sovereign-router` ⏳ **OPEN — awaiting Sovereign D1** (live pm2 shows it **online**
+this turn 2026-06-12, contradicting both the v1.0 "intentionally stopped" and this file's prior "RETIRED"
+line; Delta's 2026-06-07 reconcile dispositioned it HELD; the Sovereign decision was to be relayed with the
+2026-06-12 increment directive but did not arrive — line stays OPEN, never silent) · `tt-compose` online.
 
-**Cerebras sidecar `:3333`** — the intent-classifier / `/think` brain for Morphy voice. Was down for a long
-time (root cause: `node_modules` never installed → `ERR_MODULE_NOT_FOUND: express`); now installed + running.
-`/think` classifies real intents — **live :3333/health returned 200 (`cerebras:true`, model gpt-oss-120b)
-this turn** (📋 ATTESTED, single probe). ⚠️ binds `*:3333` (all interfaces) unlike the loopback-bound others —
-exposure delta to tighten to `127.0.0.1`. *(See DOC-3.6 routing note: the v1.0 dead-relay premise is superseded,
-📋 ATTESTED-needs-Delta-confirm.)*
+**Cerebras sidecar `:3333`** — the intent-classifier / `/think` brain for Morphy voice. Now **pm2-managed**
+(`cerebras-sidecar`, online — supersedes the "standalone, watched" line in colony docs). ⚠️ `/health` now
+**self-identifies as `deep-research-skill` v1.0.0**, NOT a cerebras-sidecar identity (providers
+cerebras/openai/claude/gemini/perplexity all true, `cerebras_model:gpt-oss-120b`). ✅ VERIFIED (live health
+probe + pm2 status this turn 2026-06-12; Burner scout 2026-06-12 + Delta confirm relayed same day). The
+bootstrap manifest flags `cerebras-think` ◑ DEGRADED (open but empty/short response) — treat the identity
+swap as a known drift flag until the service is renamed or split. ⚠️ still binds `*:3333` (all interfaces;
+re-verified via `ss` this turn) — exposure delta to tighten to `127.0.0.1`. *(See DOC-3.6 routing note —
+now ✅ VERIFIED.)*
 
 **Langfuse `:3100`** — self-hosted v3, LIVE, health 200, project `axiom-colony`. ⚠️ running on **compose-DEFAULT
 secrets** (no stack `.env`; it initialised on defaults). **Known-debt: rotating these needs a deliberate
@@ -276,20 +304,24 @@ migration (re-encrypt under a new key, or accept wiping ~1.1GB of traces), NOT a
 `.env` would BREAK the live stack.** Local-only (127.0.0.1) so immediate risk low. Keys live at
 `/root/.config/axiom/sidecar/.env` (NOT `/root/axiom/.env`).
 
-**Morphy Remote `:3017`** (the phone interface) — pm2 `morphy-remote`; cloudflared tunnel →
-`https://morphy.axiomintelligence.co.nz`. War-room UI at `/morphy-remote.html` (root `/` is a "Course Zone"
-index, not the war-room — UX quirk). **Auth = Cloudflare Access.** ⚠️ **Both `CF_ACCESS_TEAM_DOMAIN` AND
-`CF_ACCESS_AUD` must be in the RUNNING process's spawn env** (code reads `process.env`, no dotenv; a plain
-restart after editing `.env` does NOT pick them up). Setting *only* TEAM_DOMAIN silently SKIPS audience
-validation = security hole. **VERIFIED WORKING on the phone:** auth, Deepgram ASR, intent classification + mode
-switching (via :3333), chat, voice-out.
+**Cockpit `:3017`** (the phone / war-room interface) — now served by the SUPERVISOR cockpit: pm2
+`cockpit-server` → `/root/axiom/delta-cockpit-wt/server.js` (delta-cockpit-wt worktree). pm2 `morphy-remote`
+is **STOPPED** (superseded as the :3017 server). `GET /api/remote/state-hash` is **auth-gated** — an
+unauthenticated probe returns **403**. ✅ VERIFIED (pm2 status + live 403 probe + script-path read this turn
+2026-06-12; Burner scout 2026-06-12 + Delta confirm relayed same day). Binds `127.0.0.1`; cloudflared tunnel
+→ `https://morphy.axiomintelligence.co.nz` with **Cloudflare Access** in front — 📋 ATTESTED, carried from
+the superseded morphy-remote line; re-verify the `CF_ACCESS_TEAM_DOMAIN`+`CF_ACCESS_AUD` spawn-env gotcha
+(both must be in the RUNNING process env; TEAM_DOMAIN alone silently skips audience validation) against the
+cockpit-server process before depending on it.
 
 **Voice-auth JWT gate `:8093` — ✅ VERIFIED-IN-RECORD (KR-jester-008, PASS).** The named-tunnel CF Access JWT
 gate accepts ONLY cryptographically-verified CF Access identities; no auditor-craftable token yields acceptance;
 fail-closed on misconfig without going dark; single awaited front-door chokepoint, no WS side-door.
 *Provenance (on-disk):* `/root/axiom/morphy-warroom/.cert-bus/verdicts/KR-jester-008.0195cdc0.PASS.json`
 (commit `0195cdc0`; supersedes the old "block ALL tunnel traffic" stance — accepts VERIFIED identities only,
-NOT a blanket "remote is open").
+NOT a blanket "remote is open"). ⏳ **OPEN — awaiting Sovereign D2:** a decision touching this line was to be
+relayed with the 2026-06-12 increment directive but was not received; the KR-jester-008 cert facts above
+stand as recorded.
 
 **Voice pipeline pieces** (all exist + work): IN = Deepgram ASR (`/api/dg-key`) · intent = `/api/intent` →
 :3333 `/think` (fail-closed) · OUT = `morphySpeak()` via OpenAI Realtime (gpt-realtime, voice "sage") + `/tts`
@@ -313,8 +345,11 @@ tooling 3× this arc (powershell allow-listed; Docker exes may still need it, or
 
 **What it is:** the *middle* of the voice loop. Everything around it already worked; the daemon connects the
 inbox to a live agent and writes the reply to the outbox.
-File: `/root/axiom/colony/voice-loop/voice-loop-daemon.js` · pm2 `voice-loop-jester` · pilot config
-**AGENT=jester, ONE-SHOT, POLL 2.5s, TRUST_POSTURE=READ_ONLY.**
+File (v2, LIVE): `/root/axiom/gamma-bus-build/bus/voice-loop-daemon-v2.js` · pm2 `voice-loop-jester-v2`
+(online). v1 (`/root/axiom/colony/voice-loop/voice-loop-daemon.js`, pm2 `voice-loop-jester`) is **STOPPED**
+— superseded. ✅ VERIFIED (pm2 status + v2 file on disk this turn 2026-06-12; Burner scout 2026-06-12 +
+Delta confirm relayed same day). Pilot config **AGENT=jester, ONE-SHOT, POLL 2.5s, TRUST_POSTURE=READ_ONLY**
+📋 ATTESTED carried from v1 — re-verify against the v2 process env before depending on it.
 
 **Transport = local subprocess, NOT Claude Code Remote Control.** RC (`claude --remote-control`) exists and the
 Sovereign has it (v2.1.159) — but it is a *cloud relay* (claude.ai-gated, inbound only from Anthropic's app, no
@@ -417,6 +452,10 @@ usable reply this turn"), Jester re-gates.
 - **GATE-AS-CODE + voice-loop pilot** — `JESTER_*_20260601.md` gate docs; "Empirical testing and archive verification" (2026-06-01).
 - **Voice-auth JWT gate (:8093) PASS** — `/root/axiom/morphy-warroom/.cert-bus/verdicts/KR-jester-008.0195cdc0.PASS.json` (commit 0195cdc0, 2026-06-04).
 - **Ledger lineage / the slipbox vision** — "Log base 7 knowledge ledger" (2026-05-16); "Log base 7 role internalization" (2026-04-25, the JSONL-flywheel + holographic-slipbox vision); "Jester build architecture and implementation phases" (2026-04-25, SCARs 142–150).
+- **Three-tier roster (DOC-2-ROSTER) + §4 :3017/:3333/sovereign-router + §5 v2-daemon supersedes + DOC-3.6
+  routing-note promotion** — Burner scout 2026-06-12; Delta confirms relayed 2026-06-12 (Sovereign increment
+  directive); independently re-probed live by Morpheus the same turn (pm2 status, :3017 403, :3333 health
+  identity, `ss` bind, on-disk reads of colony-roster.mjs / voice-loop-daemon-v2.js / delta-cockpit-wt script path).
 - **This arc's full state** — the 2026-06-02 session handoff (the document this canon distils and supersedes).
 
 ---
