@@ -1,6 +1,6 @@
 # COLONY_CANON.md
 ### Axiom Colony — the canonical, versioned source of truth
-**v1.1** · 2026-06-05 · Sovereign: Regan Duff · Axiom Intelligence Ltd · anchored to Taranaki/Auroa 🇳🇿🐉🔥
+**v1.2** · 2026-06-12 · Sovereign: Regan Duff · Axiom Intelligence Ltd · anchored to Taranaki/Auroa 🇳🇿🐉🔥
 **Framework:** AXIOM-X v3.1 (Tensor Tympani × Fractal Hybrid). LOG⁵ base-7 = depth-scaffolding metaphor, not literal compute.
 
 > **Supersedes the v1.0 proof copy** (`canon-source/COLONY_CANON.v1.0.proof.md` @ a069d37,
@@ -9,6 +9,8 @@
 > v1.1 adds the Doctrine-ID Registry + per-block `<!-- DOC:DOC-x.y ... -->` markers so doctrine can be
 > superseded-by-id deterministically (no LLM in the promoter). Bodies §0..§9 are preserved essentially verbatim
 > from v1.0; only the marked session-corrections below differ, each at its honest grounding marker.
+> **v1.2** (2026-06-12) bumps the label for the certified roster/architecture batch
+> (KR-jester-canon-doc2-roster-3ce8234 + the D1/router closures in this increment) — per Jester F4.
 
 > **This file SUPERSEDES, it does not ACCUMULATE.** It is the thing the handoff doc (§9) and four prior
 > ledger attempts were reaching for. Logs grow noisy (scars.jsonl is 36k lines, ~99% smoker spam). Canon
@@ -244,7 +246,7 @@ Logs accumulate (noise-prone). Canon supersedes (small, current). Apply the supe
 itself. *Provenance:* handoff §9, confirmed "Empirical testing and archive verification" 2026-06-01.
 <!-- /DOC:DOC-3.9 -->
 
-<!-- DOC:DOC-3.10 v:1.0 status:ACTIVE -->
+<!-- DOC:DOC-3.10 v:1.0 status:ACTIVE block_sha256:9330bbb17498358a100a2a70ca1a7a687d366c5f70063a7caf1433d65817d3b3 -->
 ## 3.10 MEASURED-RIGOR — the auditor is watched, not trusted (certifier ≠ its-own-watcher)  [DOC-3.10]
 SCAR-128 (DOC-3.4) separates build from audit. This separates audit from the audit-OF-the-audit: a verifier
 that grades its own rigor is the leveller→oracle collapse — the rubber stamp an optimising swarm learns to
@@ -283,10 +285,13 @@ mechanics @ 8b969c8). Composes with DOC-0, DOC-3.4/SCAR-128, DOC-3.5/GATE-AS-COD
 scar-api `:3041` · marae `:3050` · state-store `:3060` · scar-bridge `:3061` (WITNESS_ENFORCE=shadow) ·
 watcher `:3070` · shield `:3071` · beacon `:3072` · **sentinel/axiom-sidecar `:8089`** (the Gemini brain —
 `/consult` + sport routes; speaks a *different* protocol from :3333, 404s on `/think`) · observatory `:3074` ·
-provenance `:3075`. `sovereign-router` ⏳ **OPEN — awaiting Sovereign D1** (live pm2 shows it **online**
-this turn 2026-06-12, contradicting both the v1.0 "intentionally stopped" and this file's prior "RETIRED"
-line; Delta's 2026-06-07 reconcile dispositioned it HELD; the Sovereign decision was to be relayed with the
-2026-06-12 increment directive but did not arrive — line stays OPEN, never silent) · `tt-compose` online.
+provenance `:3075`. `sovereign-router` ⚰️ **RETIRED-FOR-REAL 2026-06-12** ✅ VERIFIED-IN-RECORD (Delta
+zombie verdict 2026-06-12 — no live consumers, 401'd uplink — independently confirmed by Morpheus same day:
+the router ran "Redis: NOT CONFIGURED — colony bridge running without Upstash" its whole life, so the
+`spangle:*` pulse/command keys were never fed and the code-level spangle-worker reader was reading keys
+nobody wrote, while the WS uplink looped 401 since token drift. Retire decided via the Sovereign relay;
+Relay A's `pm2 delete` had NOT landed on the box, so Morpheus executed `pm2 delete sovereign-router &&
+pm2 save` 2026-06-12 and re-probed: gone from pm2, `:3062` dark, resurrect-proof) · `tt-compose` online.
 
 **Cerebras sidecar `:3333`** — the intent-classifier / `/think` brain for Morphy voice. Now **pm2-managed**
 (`cerebras-sidecar`, online — supersedes the "standalone, watched" line in colony docs). ⚠️ `/health` now
@@ -314,14 +319,17 @@ the superseded morphy-remote line; re-verify the `CF_ACCESS_TEAM_DOMAIN`+`CF_ACC
 (both must be in the RUNNING process env; TEAM_DOMAIN alone silently skips audience validation) against the
 cockpit-server process before depending on it.
 
-**Voice-auth JWT gate `:8093` — ✅ VERIFIED-IN-RECORD (KR-jester-008, PASS).** The named-tunnel CF Access JWT
-gate accepts ONLY cryptographically-verified CF Access identities; no auditor-craftable token yields acceptance;
-fail-closed on misconfig without going dark; single awaited front-door chokepoint, no WS side-door.
-*Provenance (on-disk):* `/root/axiom/morphy-warroom/.cert-bus/verdicts/KR-jester-008.0195cdc0.PASS.json`
-(commit `0195cdc0`; supersedes the old "block ALL tunnel traffic" stance — accepts VERIFIED identities only,
-NOT a blanket "remote is open"). ⏳ **OPEN — awaiting Sovereign D2:** a decision touching this line was to be
-relayed with the 2026-06-12 increment directive but was not received; the KR-jester-008 cert facts above
-stand as recorded.
+**Voice-auth JWT gate `:8093` — ⚰️ DECOMMISSIONED (Sovereign decision D1, 2026-06-12).** The token-mode
+tunnel's ingress fronts `:3017` and `:8095` ONLY (Delta three-confirm diagnostic 2026-06-12, ingress quoted
+verbatim in his report, relayed with D1); origin auth is **CF Access at the edge + cockpit `X-Origin-Auth`**
+(see the `:3017` entry). ✅ VERIFIED-IN-RECORD — Morpheus re-probed same day: `:8093` has NO listener while
+`:3017`/`:8095` listen on loopback, and cloudflared runs `tunnel run --token` (token-mode; no on-disk
+ingress config — the ingress lives at the CF edge, which is why Delta's quote is the citable source).
+*History (retired ≠ deleted):* the gate was **KR-jester-008 PASS** —
+`/root/axiom/morphy-warroom/.cert-bus/verdicts/KR-jester-008.0195cdc0.PASS.json` (commit `0195cdc0`):
+CF Access JWT verification, fail-closed, single chokepoint, no WS side-door. That cert recorded a true
+property of a service now retired; it does NOT attest the current perimeter. *(Closes this file's prior
+"⏳ OPEN — awaiting Sovereign D2" placeholder; the Sovereign's directive numbering calls this decision D1.)*
 
 **Voice pipeline pieces** (all exist + work): IN = Deepgram ASR (`/api/dg-key`) · intent = `/api/intent` →
 :3333 `/think` (fail-closed) · OUT = `morphySpeak()` via OpenAI Realtime (gpt-realtime, voice "sage") + `/tts`
@@ -456,6 +464,11 @@ usable reply this turn"), Jester re-gates.
   routing-note promotion** — Burner scout 2026-06-12; Delta confirms relayed 2026-06-12 (Sovereign increment
   directive); independently re-probed live by Morpheus the same turn (pm2 status, :3017 403, :3333 health
   identity, `ss` bind, on-disk reads of colony-roster.mjs / voice-loop-daemon-v2.js / delta-cockpit-wt script path).
+- **D1 :8093 decommission + sovereign-router retire-for-real (v1.2)** — Sovereign decision D1 relayed
+  2026-06-12; Delta three-confirm diagnostic + zombie verdict 2026-06-12 (colony outbox heartbeat 01:04Z;
+  full ingress quote relayed with the directive, report file not on this box); Morpheus same-day live
+  probes (`ss` :8093/:3017/:8095, token-mode cloudflared, "Redis: NOT CONFIGURED" out-log) + executed
+  `pm2 delete` + post-delete re-probe.
 - **This arc's full state** — the 2026-06-02 session handoff (the document this canon distils and supersedes).
 
 ---
