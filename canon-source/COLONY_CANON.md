@@ -380,11 +380,16 @@ together; the DEFAULT_MODEL vars alone do NOT route.
 | Posture | Flags | Answers status Qs? | Can mutate? |
 |---|---|---|---|
 | **No-tools** (current pilot) | `--tools "" --strict-mcp-config` | ❌ (hallucinates tool-calls) | ❌ |
-| **Read-only-tools** (the NEXT upgrade) | `--allowed-tools "Read Grep Glob" --strict-mcp-config` | ✅ reads real state | ❌ |
+| **Read-only-tools** (the NEXT upgrade) | `--tools "Read Grep Glob" --strict-mcp-config` | ✅ reads real state | ❌ |
 | **Full trust** (the goal, carefully) | `--allow-dangerously-skip-permissions` | ✅ | ✅ |
 
 ⚠️ **GOTCHA (verified):** `--tools ""` ALONE is NOT read-only — built-in Bash/Edit/Write die but **MCP write
 tools survive**. True read-only needs BOTH `--tools ""` AND `--strict-mcp-config`.
+
+⚠️ **GOTCHA 2 (this gate: REQ-gamma-readonly-voiceloop, 2026-06-17, gamma):** `--allowed-tools` permission-gates
+ONLY and leaves Bash/Edit/Write REGISTERED → FAILS OPEN in an auto-approve env (a write-probe wrote a file).
+True read-only = `--tools <allowlist> --strict-mcp-config` (restricts AVAILABILITY; Write/Edit/Bash do not exist).
+RULE: verify read-only by the logged init.tools, NEVER by the flag name.
 
 **Model-quality finding (Jester-characterised):** deepseek-flash answered **8/8 tool-less knowledge questions,
 zero hallucinations**. It only hallucinates tool-calls on *action*-demanding prompts. **So the model isn't weak
