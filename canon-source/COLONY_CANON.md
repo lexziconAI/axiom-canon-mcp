@@ -77,6 +77,7 @@ never renumbered. A retired doctrine keeps its id with `status:RETIRED`.
 | `DOC-3.8` | Commit the floor between tiers | v1.1 | ACTIVE |
 | `DOC-3.9` | Canon supersedes log | v1.1 | ACTIVE |
 | `DOC-3.10` | Measured-rigor — the auditor is watched, not trusted | v1.1 | ACTIVE |
+| `DOC-3.11` | The Evidence Doctrine — a passing check is evidence only if independent, falsifiable, informed, and scoped | v1.1 | ACTIVE |
 
 ---
 
@@ -274,6 +275,21 @@ satisfy. The certifier's rigor is MEASURED, never asserted.
 Provenance: Sovereign pre-mortem 2026-06-10 (leveller→oracle collapse); Delta diagnosis (propose-only, cert-bus
 mechanics @ 8b969c8). Composes with DOC-0, DOC-3.4/SCAR-128, DOC-3.5/GATE-AS-CODE, DOC-3.7/fail-closed.
 <!-- /DOC:DOC-3.10 -->
+
+<!-- DOC:DOC-3.11 v:1.0 status:ACTIVE -->
+3.11 THE EVIDENCE DOCTRINE — a passing check is evidence only if independent, falsifiable, informed, and scoped  [DOC-3.11]
+A check's PASS is evidence about the world ONLY IF all four hold; strip any one and the pass is decoration, not evidence. Absorbs four session candidates (constraint-vs-witness, rigid-control falsifiability, information-budget, scope-travels) into one law (DOC-0: cut before you add).
+
+INDEPENDENT — the check is independent of how the artifact was produced AND of the claim it tests; it does not re-derive the thing it checks. Worked example (generators): the generator did not satisfy it by construction (else it is a CONSTRAINT and the pass is tautological). Measurement-only (no generator): the measurement must not be self-calibrating or self-consistent against its own assumption (a homography fit that always yields convergent lines is checking its own fit, not the world). Generator-independence is the example; production-and-claim independence is the rule.
+FALSIFIABLE — it CAN return the negative, DEMONSTRATED by red-teaming it against a valid-but-wrong artifact it must reject, AND it does so DETERMINISTICALLY (a flaky or seed-lucky verdict is not evidence; the check must reliably return the correct negative, not occasionally).
+INFORMED — the check reads the actual artifact and its data carries the discriminating information at the chosen sampling/resolution. BINDING: a cryptographic check verifies the actual bytes consumed, never a reference or label pointing at them (checking a pointer is not checking the thing). CAVEAT: a single blind check proves only that THIS method is blind on THIS data; concluding the information is unrecoverable for ANY method requires an analytical information-budget proof, not one failed witness.
+SCOPED — the pass is trusted only within the role and threat-model it was validated for, enforced structurally, not by a future reader's memory.
+
+Grounding (all RUN-confirmed this session): INDEPENDENT from KR-041 (constraint-pass is not evidence); FALSIFIABLE from KR-040 and KR-041 (witness fired on a rigid control / false-passed an unequal-height overlap); INFORMED from KR-040 (45 degree information wall) and KR-032/038 (signature over bytes); SCOPED from KR-038/039 (signature wall's threat-model ceiling).
+
+Provenance: Coordinator canon-delta; Jester cold-cert KR-jester-042 (CONDITIONAL, these scoped fixes applied, re-cert at frozen SHA). Returned CONDITIONAL on its own certification because its own FALSIFIABLE condition bit, the law practicing itself.
+
+<!-- /DOC:DOC-3.11 -->
 
 <!-- CANON:DOCTRINE-END — new doctrine (canon_delta operation:add) is inserted immediately BEFORE this anchor; Contract B. Supersede/retire key on each DOC:<id> marker and ignore this anchor. -->
 
