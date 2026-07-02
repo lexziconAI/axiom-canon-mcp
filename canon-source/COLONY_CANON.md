@@ -78,6 +78,7 @@ never renumbered. A retired doctrine keeps its id with `status:RETIRED`.
 | `DOC-3.9` | Canon supersedes log | v1.1 | ACTIVE |
 | `DOC-3.10` | Measured-rigor — the auditor is watched, not trusted | v1.1 | ACTIVE |
 | `DOC-3.11` | The Evidence Doctrine — a passing check is evidence only if independent, falsifiable, informed, and scoped | v1.1 | ACTIVE |
+| `DOC-3.12` | Posture-ceiling-default-ON — voice work is read-only-ceilinged | v1.2 | ACTIVE |
 
 ---
 
@@ -289,6 +290,27 @@ Provenance: Coordinator canon-delta; Jester cold-cert KR-jester-042 (CONDITIONAL
 
 <!-- /DOC:DOC-3.11 -->
 
+<!-- DOC:DOC-3.12 v:1.0 status:ACTIVE block_sha256:588cbd5a696994d7d39d32ab97824e7bc952c404ec639b491a1ba3397d8ca305 (sha256 of this block's BODY — every line strictly between the two DOC markers, UTF-8, LF-joined, no trailing newline; promoter DISARMED so computed by hand. Re-stated from the DOC-2-ROSTER convention to be circular-reference-free and deterministically reproducible; future automation adopt or re-state.) -->
+## 3.12 POSTURE-CEILING-DEFAULT-ON — voice-originated work is read-only-ceilinged  [DOC-3.12]
+GATE-AS-CODE (DOC-3.5) applied to the cockpit voice surface. A voice utterance can STAGE work (the pill /
+AMBER / RED flow) but cannot make that work write-capable. Every voice-staged claude job carries
+`posture:read_only` by DEFAULT — which the frozen AXON daemon turns into `--tools "Read Grep Glob"` AND
+verifies fail-closed against the logged `init.tools` (DOC-3.7). A shell job has no read-only posture and is
+refused at staging outright. The RED keyword list is a COURTESY LABEL, never the wall — it is bypassable by
+paraphrase and (before hardening) by a single hidden-Unicode character, so safety must not and does not
+depend on it firing. The ONLY way voice-originated work becomes write-capable is an explicit deploy-config
+opt-out (`VOICE_POSTURE_CEILING=0`) — NOT reachable from any utterance, however phrased or obfuscated.
+Disclosure is part of the gate: the pill face shows the FULL request byte-for-byte (no truncation), so the
+authorising human tap is an INFORMED tap. RATIFIED DEFAULT: the ceiling is ON (Sovereign, 2026-07-02).
+This promotes the pill/AMBER/RED voice-wire from "in build" (§5, 📋 ATTESTED) to ✅ LIVE + certified.
+Provenance: KR-VOICE-WIRE-02 (Jester `gate:GO`, `certified:true`, canon-supersede AUTHORIZED; verdict sha256
+`acf1975790c556e99a3410bc12567dace358f13503992184a49372eca671797a`) · certified cockpit HEAD `e14559d`
+(branch `gamma/morphy-remote-tier1`, tag `voice-wire-certified-KR-VOICE-WIRE-02`) · Sovereign mainline
+ratification `briefs/reorg/MAINLINE-RATIFICATION-2026-07-02.md`. Composes with DOC-3.5 (GATE-AS-CODE),
+DOC-3.7 (fail-closed). ✅ VERIFIED (Jester re-derived FIX1/2/3 live incl. an end-to-end release where the
+ceilinged executor itself declined the write it was asked to smuggle).
+<!-- /DOC:DOC-3.12 -->
+
 <!-- CANON:DOCTRINE-END — new doctrine (canon_delta operation:add) is inserted immediately BEFORE this anchor; Contract B. Supersede/retire key on each DOC:<id> marker and ignore this anchor. -->
 
 ---
@@ -385,6 +407,8 @@ tooling 3× this arc (powershell allow-listed; Docker exes may still need it, or
 ---
 
 ## 5. THE VOICE-LOOP KEYSTONE — the central thing in flight 📋 ATTESTED
+
+**✅ LIVE + certified (2026-07-02):** the cockpit voice-wire — the pill / AMBER / RED flow, R-V1..R-V5, SPOKEN/DETAIL — is certified and deployed (Jester `KR-VOICE-WIRE-02` GO; cockpit HEAD `e14559d`). Voice-originated work is read-only-ceilinged by default — see **DOC-3.12**. (The daemon-side voice-loop keystone below remains the separate, still-in-flight piece.)
 
 **What it is:** the *middle* of the voice loop. Everything around it already worked; the daemon connects the
 inbox to a live agent and writes the reply to the outbox.
