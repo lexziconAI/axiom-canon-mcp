@@ -108,47 +108,45 @@ suite. The colony is the instrument through which the constitutional-AI research
 
 ---
 
-<!-- DOC:DOC-2-ROSTER v:1.1 status:ACTIVE block_sha256:c34128ad08f51fb70b83d17e8a150b7947d7c9ff7f4e507f73fdfccd7788aa36 -->
-## 2. THE ROSTER — three tiers, 16 agents (lanes — one writer per file/concept at a time)  [DOC-2-ROSTER]
+<!-- DOC:DOC-2-ROSTER v:2.0 status:ACTIVE block_sha256:e7cf6252a8886cf2f90295c8f5293ad88c7a77e9b63d729f2690524b40387f86 (sha256 of this block incl. both markers, computed by Jester at promotion since the automated promoter is DISARMED; no prior committed convention found to match against — future automation should confirm/adopt this convention or re-state its own) -->
+## 2. THE ROSTER — two tiers: structural roles + project lanes  [DOC-2-ROSTER]
 
-✅ VERIFIED-IN-RECORD (Burner scout 2026-06-12; Delta confirm relayed 2026-06-12 with the Sovereign's
-increment directive; `colony-roster.mjs` read on disk same turn). *Supersedes the v1.1 7-agent table.*
+**Supersedes the v1.1 three-tier (INFRA/PRODUCT/RESERVE, 16-agent) table.** Provenance: Sovereign relay
+2026-07-02 (two-tier ratification); alias map + evidence in
+`briefs/reorg/PROJECT-REGISTRY-SPEC-AND-ROSTER-AMENDMENT-2026-07-02.md` and `colony/projects.mjs`.
+✅ VERIFIED (Jester `KR-jester-AXON-V2` + `KR-jester-AXON-V2-R2`: `resolveLane()` probed directly against
+the real module for every alias/role/unknown case; the daemon's dispatch + lock + receipt + digest call
+sites confirmed to use the resolved id; unknown lanes confirmed LOUD-never-blocked both by code and live
+on the real bus).
 
-**INFRA (7)** — the colony's own machinery:
+**This supersede SUBSUMES `REQ-canon-sigma-roster-promotion-2305f4ef`** (a prior Sigma RESERVE→PRODUCT
+promotion of this same DOC id under the *retired* three-tier model, `KR-jester-canon-sigma-roster-promotion-2305f4ef.PASS.json`) — that framing no longer exists; sigma's status is carried forward below under
+the two-tier model instead.
 
-| Agent | Lane | Mutates? | Certifies? |
-|---|---|---|---|
-| **Morpheus** | builder / substrate | ✅ writes, runs, edits live | ❌ never self-certifies |
-| **Jester** | independent read-only auditor | ❌ never builds, never mutates | ✅ the only certifier (SCAR-128) |
-| **Burner** | ephemeral read-only scout / diagnostician | ❌ read-only, HOLDs | ❌ |
-| **Gamma** | visualization / dashboard | ✅ (own lane) | ❌ |
-| **Eta** | demo lane (⚠️ drift-prone) | ✅ (own lane) | ❌ |
-| **Delta** | diagnostician / cold-auditor (propose-only) | ❌ | ❌ |
-| **Orpheus** | scribe | ❌ | ❌ |
+STRUCTURAL ROLES — the ONLY named agent sessions; persist independent of project:
+  morpheus (substrate) · jester (certifier, never acting — SCAR-128) · burner · axon (non-LLM daemon).
+  [delta: OPEN — retain as a 5th structural role or fold into project lanes; Sovereign to decide.]
 
-**PRODUCT (3)** — product lanes:
+PROJECT LANES — every other former agent name retires to a project id (`colony/projects.mjs` is the
+single source; `resolveLane` maps legacy alias → project, unknown → `unattributed` LOUD):
+  sigma → sd-modeller        (SOVEREIGN-RATIFIED 2026-07-02)
+  alpha → drbot              (mapping ratified; slug pending Sovereign naming)
+  gamma → morphy-remote      (mapping ratified; slug pending Sovereign naming)
+  eta → eta-demo-content · delta → delta-research · beta → ai-risk-reader · psi → psi-visual-elevation ·
+  lambda → fanout-battery · orpheus → scribe · rho → (unclaimed) · omega → (reserved) ·
+  theta → voice-studio-s3 · kappa → (reserved)                         (all PROPOSED — Sovereign confirms slugs)
 
-| Agent | Lane |
-|---|---|
-| **Alpha** | drbot + popper |
-| **Beta** | drug-discovery (env quarantined 2026-05-31) |
-| **Psi** | front-end |
-
-**RESERVE (6)** — named, not active lanes: **Sigma** (lane unconfirmed — active artifacts exist) ·
-**Omega** · **Lambda** · **Rho** · **Theta** · **Kappa**.
-
-**HARD LINE:** Jester is *never* given an acting posture. An acting Jester mutates what it audits and breaks
-the integrity backbone that has caught this arc's mistakes. Jester read-only is its role; Jester-that-builds
-is the antipattern SCAR-128 exists to prevent.
+**HARD LINE (carried forward):** Jester is *never* given an acting posture. An acting Jester mutates what
+it audits and breaks the integrity backbone that has caught this arc's mistakes. Jester read-only is its
+role; Jester-that-builds is the antipattern SCAR-128 exists to prevent.
 
 **Attribution:** every agent session must carry `AXIOM_AGENT=<role>` in its launching shell. The wrapper
-`axwake <role>` does this (validates against the roster, exports the var, launches claude). 📋 ATTESTED (built +
-Jester-gated CLEAN this arc; standardize on `AXIOM_AGENT`, NOT the divergent `AGENT_NAME` the hook ignores).
+`axwake <role>` does this (validates against the roster, exports the var, launches claude). 📋 ATTESTED.
 
-**Single roster source:** `/root/axiom/colony/colony-roster.mjs` is THE emit-roster source; `axwake`,
-`AGENT_ENUM` (server-remote.js) and HEARTBEAT-CONVENTION.md derive from it. ⏳ derivation lands next
-increment — today's on-disk ROSTER export is 11 names (burner/psi/lambda/theta/kappa not yet in the emit
-enum; read this turn 2026-06-12), so until that increment this table and the file reconcile BY HAND, not by code.
+Single sources: `colony/colony-roster.mjs` = STRUCTURAL ROLE launchability (`axwake`); `colony/projects.mjs` =
+PROJECT LANE resolution. Two registries, two concerns, same supersede-in-place discipline. Fleet
+decommission/repoint is a future gated increment — running daemons are NOT touched here (HARD SCOPE,
+Sovereign 2026-07-02: the voice-loop fleet keeps running under legacy names this increment).
 <!-- /DOC:DOC-2-ROSTER -->
 
 ---
@@ -335,6 +333,27 @@ the superseded morphy-remote line; re-verify the `CF_ACCESS_TEAM_DOMAIN`+`CF_ACC
 (both must be in the RUNNING process env; TEAM_DOMAIN alone silently skips audience validation) against the
 cockpit-server process before depending on it.
 
+**AXON job-runner (systemd `axon.service`, enabled)** — the colony's non-LLM hands: polls
+`/root/axiom/colony/axon-bus/` (isolated root — **never** `colony/bus/`, the voice-loop fleet's;
+grep-provable, gate 0e(b)), executes up to `AXON_MAX_WORKERS=4` jobs in parallel under
+lane+declared-writes locks, signs every receipt Ed25519 via the System-11 `ProvenanceChain`
+pattern (own keypair, `axon-bus/keys/`, gitignored), single serialized committer for
+ledger+git, `MemAvailable`/loadavg backpressure. Windows staging bridge: ingests
+`C:\axiom-bus\inbox` (copy+unlink, EXDEV-safe), mirrors receipts to `C:\axiom-bus\done|failed`.
+✅ VERIFIED (T1-T5 + P1-P5, 10/10; Jester `KR-jester-AXON-COLONY-01` + `.E2` independently
+re-derived A/B/C/D/F/E PASS). **v2** (Jester `KR-jester-AXON-V2-R2`, ✅ VERIFIED, overall PASS)
+adds: the outbox digest (`outbox/axon.md`, one-writer, atomic C:\ mirror) · a project-lane
+registry (`colony/projects.mjs`, `resolveLane`, unknown→`unattributed` LOUD never blocked) ·
+read-only claude posture with fail-closed `init.tools` verification · a Sovereign-released
+`pending/` cert-request bridge (structurally excluded from the dispatch scan) · a Sovereign
+**override ledger** (`grants.mjs`) — scoped/signed/self-expiring AMBER grants gate every
+write-capable job (GREEN read-only auto-releases; RED constitutional concerns have no grant
+vocabulary entry at all; a relayed override lands in `pending/` as a request, never self-executes).
+A finalize()-level receipt/job filename collision (P0, found live on real sd-modeller traffic)
+was fixed structurally (job moves to an always-distinct `job.<id>.json`, receipt written last) and
+19 clobbered receipts repaired from the Windows mirror — both independently re-verified by Jester
+via constructed collision attempts and a full-bus signature sweep.
+
 **Voice-auth JWT gate `:8093` — ⚰️ DECOMMISSIONED (Sovereign decision D1, 2026-06-12).** The token-mode
 tunnel's ingress fronts `:3017` and `:8095` ONLY (Delta three-confirm diagnostic 2026-06-12, ingress quoted
 verbatim in his report, relayed with D1); origin auth is **CF Access at the edge + cockpit `X-Origin-Auth`**
@@ -412,14 +431,26 @@ zero hallucinations**. It only hallucinates tool-calls on *action*-demanding pro
 — the no-tools posture is wrong for action questions.** Give it read tools and status questions become
 genuinely answerable. (Models and posture are *separate axes* — don't conflate "weak answers" with "wrong posture.")
 
-**⏳ THE OPEN BLOCKER (Jester re-gate: BLOCKED):** the daemon's honesty detector (decides "real reply" vs
-"tried-to-act non-answer to flag") used a *block-list* of 4 tool-call formats. Flash emitted a different shape
-(`<function_terms>`, `<action><name>Bash</name>…`) that slipped through → a non-answer dressed as a reply
-**reached the phone**. Block-list enumeration is the wrong shape (whack-a-mole). **Fix (per GATE-AS-CODE):** a
-*positive* "is this prose addressed to the user?" gate + a *structural* action-block detector (catch the FAMILY
-of `<…><name>…</name><command|args>…` shapes), without over-suppressing legit `<` (e.g. "a < b") or inline code.
-Then Morpheus re-tests Case A (real reply) + Case B (the exact `<function_terms>` failure → must read "⚠️ no
-usable reply this turn"), Jester re-gates.
+**✅ RESOLVED (verified `KR-jester-AXON-V2`, 2026-07-02):** the honesty detector uses a *positive* "prose
+addressed to the user" gate + a *structural* action-block **family** detector (the
+`<…><name>…</name><command|args>…` shape class + wrapper tags), replacing the block-list. Case A
+(real reply passes) + Case B (the exact `<function_terms>` failure → "⚠️ no usable reply this turn")
+both hold, plus 10 adversarial cases (12/12). *History below preserved per DOC-3.9 — the block-list
+lesson stands.*
+
+**Provenance (honest):** the fix is gamma-bus-build commit `39d4471` "[Agent MORPHEUS] voice-loop
+honesty detector: GATE-AS-CODE" (2026-06-21, a prior Morpheus session), already LIVE — the running
+`voice-loop-jester-v2` started 2026-07-02 15:06, after the commit. It was authored earlier but never
+re-gated, which is why this BLOCK stayed open in canon. Verified this gate via
+`agents/axon/tests/b5-honesty-caseAB.mjs` (extracts + runs the real on-disk classifier) and
+independently re-derived with Jester's own extraction + adversarial cases (10/10) in `KR-jester-AXON-V2`.
+Substrate secondment (gamma's lane); Jester gates the close.
+
+*Original blocker (historical record, per DOC-3.9 — the block-list lesson stands):* the daemon's
+honesty detector (decides "real reply" vs "tried-to-act non-answer to flag") used a *block-list* of 4
+tool-call formats. Flash emitted a different shape (`<function_terms>`, `<action><name>Bash</name>…`)
+that slipped through → a non-answer dressed as a reply **reached the phone**. Block-list enumeration is
+the wrong shape (whack-a-mole).
 
 ---
 
@@ -436,6 +467,10 @@ usable reply this turn"), Jester re-gates.
    never tired. Hold the line under "keep going" pressure — it is the discipline.**
 
 **The deeper builds (the real "becoming"):**
+- **The two-layer operating model** — conversations are ephemeral per-surface (phone, desktop, IDE);
+  work is durable and Ed25519-signed on the axon-bus. **One dedicated desktop chat per project;
+  structural roles {morpheus, jester, burner, axon} remain the only named agent sessions; project work
+  stages via the axon-bus with `from_lane = project id`.** Surfaces come and go; the bus is the record.
 - **Per-agent ACTIVITY capture** — the big one. There is *no* clean "what each agent is doing" feed today:
   state-store = auto-minted IDs; scar hook = error/insight log (keyword-triggered, ~99% smoker spam, 62 of
   36,208 entries are FILE_TOUCH); Langfuse = consult traces only. The fix splits into **ATTRIBUTION** (solved —
